@@ -4,6 +4,8 @@
 #include <string.h>// provides strtok()
 #include <unistd.h>
 #include <sys/wait.h>//produces waitpid()
+#include <limits.h>//
+
 int main()
 {
     char *line=NULL;//creats a poniter that will hold the the inputline
@@ -45,7 +47,43 @@ int main()
         {
             continue;
         }
+              if (strcmp(argv[0], "cd") == 0)//used to compare two stings and return 0 when equal and add the cd
+                 {
+                   if (argv[1] == NULL)//checks whether argument was provided
+                    {
+                     char *home = getenv("HOME");
 
+                     if (home == NULL)
+                     {
+                          fprintf(stderr, "HOME not set\n");
+                     }
+                    else if (chdir(home) != 0)
+                     {
+                       perror("cd");
+                     }
+                    }
+                     else if (chdir(argv[1]) != 0)//changes the directory of the cirrent process
+                     {
+                       perror("cd");
+                     }
+
+                    continue;//this ensures our cd does not accidentary reach our fork
+                 }   
+                 if (strcmp(argv[0], "help") == 0)//add help command
+                  {
+                   printf("Welcome to msh!\n");
+                   printf("Available commands:\n");
+                   printf("cd [dir] - Change directory\n");
+                   printf("help     - Display this help message\n");
+                   printf("exit     - Exit the shell\n");
+
+                   continue;
+                  } 
+                  if (strcmp(argv[0], "exit") == 0)//checks whether exit if inpued then the block code will be executed exiting the while loop to the free() line
+                   {
+                      break;
+                   }
+ 
        pid_t pid = fork();
 
         if (pid < 0)//if the fork fails
