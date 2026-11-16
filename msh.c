@@ -2,7 +2,8 @@
 #include <stdlib.h>// provides free()
 #include <sys/types.h>
 #include <string.h>// provides strtok()
-
+#include <unistd.h>
+#include <sys/wait.h>//produces waitpid()
 int main()
 {
     char *line=NULL;//creats a poniter that will hold the the inputline
@@ -45,14 +46,26 @@ int main()
             continue;
         }
 
-        printf("Command: %s\n", argv[0]);
+       pid_t pid = fork();
 
-        for (int i = 0; i < argc; i++)
-        {
-            printf("Argument %d: %s\n", i, argv[i]);
-        }
+        if (pid < 0)//if the fork fails
+         {
+           perror("fork");
+         }
 
-        
+        else if (pid == 0)//the child process
+         {
+          execvp(argv[0], argv);//execvp replaces the child process
+
+          perror("execvp");
+          exit(127);
+         }
+
+         else
+         {
+          int status;
+          waitpid(pid, &status, 0);//the parent waits for the child process to finish
+          }
         
     }
     free(line);//realeses the memory allocated for the input line
