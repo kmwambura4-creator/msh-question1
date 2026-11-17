@@ -17,6 +17,9 @@ int main()
     int last_status=0;//variable stores the exit status of previous command
     while (1)//creates an infinite loop so the shell continues to accept commands
     {
+      int status;
+      while(waitpid(-1,&status,WNOHANG)>0)//prevents zombie process
+      {/* compleated background process*/}
         printf("msh[%d]>",last_status);//shows the value stored in last_status
         length =getline(&line, &capacity ,stdin);
         /*&line is the address of the pointer where the input will be stored
@@ -42,6 +45,14 @@ int main()
         }
 
         argv[argc] = NULL;//to ensure the end of the arguments
+        int background=0;
+
+        if(argc > 0 && strcmp(argv[argc-1],"&")==0)//checks if last argument is &
+        {
+          background=1;
+          argv[argc-1]=NULL;//removes & from our execvp
+          argc--;//decreases the argument count
+        }
 
         if (argc == 0)//ensures it ignores blank lines
         {
@@ -102,6 +113,12 @@ int main()
          else//parent process
          {
           int status;
+          if (background)
+         {
+          printf("Background process pid %d\n",pid);
+         }
+         else
+          {
           if(waitpid(pid, &status, 0)==-1)
           {
             perror("waitpid");
@@ -114,6 +131,7 @@ int main()
           else if(WIFSIGNALED(status))
           {
             last_status=128+ WTERMSIG(status);//used to obtain the signal number
+          }
           }
          }
         
