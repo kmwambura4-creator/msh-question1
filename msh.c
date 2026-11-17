@@ -4,7 +4,7 @@
 #include <string.h>// provides strtok()
 #include <unistd.h>
 #include <sys/wait.h>//produces waitpid()
-#include <limits.h>//
+#include <limits.h>
 
 int main()
 {
@@ -14,10 +14,10 @@ int main()
 
     char *argv[51];//argv stores pointers to individual argument
     int argc;//counts number of arguments
-
+    int last_status=0;//variable stores the exit status of previous command
     while (1)//creates an infinite loop so the shell continues to accept commands
     {
-        printf("msh> ");
+        printf("msh[%d]>",last_status);//shows the value stored in last_status
         length =getline(&line, &capacity ,stdin);
         /*&line is the address of the pointer where the input will be stored
         &capacity is address of the variable tracking allocated memory
@@ -99,11 +99,23 @@ int main()
           exit(127);
          }
 
-         else
+         else//parent process
          {
           int status;
-          waitpid(pid, &status, 0);//the parent waits for the child process to finish
+          if(waitpid(pid, &status, 0)==-1)
+          {
+            perror("waitpid");
+            last_status=1;
           }
+          else if(WIFEXITED(status))//checks if child process terminated normally
+          {
+            last_status=WEXITSTATUS(status);//extracts the actual exit status returned by the child
+          }
+          else if(WIFSIGNALED(status))
+          {
+            last_status=128+ WTERMSIG(status);//used to obtain the signal number
+          }
+         }
         
     }
     free(line);//realeses the memory allocated for the input line
