@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/wait.h>//produces waitpid()
 #include <limits.h>
+#include <fcntl.h>//provides open
 
 int main()
 {
@@ -45,6 +46,21 @@ int main()
         }
 
         argv[argc] = NULL;//to ensure the end of the arguments
+        char *output_file=NULL;
+
+        for(int i=0; i<argc; i++)
+        {
+          if(strcmp(argv[i],">")==0)
+          {
+            if(i+1<argc)
+            {
+              output_file =argv[i+1];
+              argv[i]=NULL;
+              argc=i;
+            }
+            break;
+          }
+        }
         int background=0;
 
         if(argc > 0 && strcmp(argv[argc-1],"&")==0)//checks if last argument is &
@@ -104,6 +120,22 @@ int main()
 
         else if (pid == 0)//the child process
          {
+          if(output_file !=NULL)
+          {
+            int fd=open(output_file, O_WRONLY| O_CREAT| O_TRUNC,0644);//creates the file and file permission
+            if(fd ==-1)
+            {
+              perror("open");
+              exit(1);
+            }
+            if(dup2(fd,STDOUT_FILENO)==-1)//redirection 
+            {
+              perror("dup2");
+              close(fd);
+              exit(1);
+            }
+            close(fd);
+          }
           execvp(argv[0], argv);//execvp replaces the child process
 
           perror("execvp");
