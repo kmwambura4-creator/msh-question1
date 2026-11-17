@@ -6,6 +6,7 @@
 #include <sys/wait.h>//produces waitpid()
 #include <limits.h>
 #include <fcntl.h>//provides open
+#include <signal.h>//provide signal(),SIGNT,SIG_IGN SIG_DFL
 
 int main()
 {
@@ -16,6 +17,11 @@ int main()
     char *argv[51];//argv stores pointers to individual argument
     int argc;//counts number of arguments
     int last_status=0;//variable stores the exit status of previous command
+    if (signal(SIGINT, SIG_IGN) == SIG_ERR)//tells parent process to ignore SIGINT which is uesd to terminate when crtl+c is pressed
+     {
+       perror("signal");
+       return 1;
+     }
     while (1)//creates an infinite loop so the shell continues to accept commands
     {
       int status;
@@ -120,6 +126,11 @@ int main()
 
         else if (pid == 0)//the child process
          {
+          if (signal(SIGINT, SIG_DFL) == SIG_ERR)//SIG_DEF makes the child process to follow the deafult action for SIGINT
+            {
+              perror("signal");
+              exit(1);
+            }
           if(output_file !=NULL)
           {
             int fd=open(output_file, O_WRONLY| O_CREAT| O_TRUNC,0644);//creates the file and file permission
@@ -134,7 +145,7 @@ int main()
               close(fd);
               exit(1);
             }
-            close(fd);
+            close(fd);//closed because standard output now has its own reference to opened file
           }
           execvp(argv[0], argv);//execvp replaces the child process
 
